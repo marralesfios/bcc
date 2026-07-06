@@ -1,0 +1,84 @@
+@font-face {
+    font-family: "Noto Sans Mono";
+    src: 
+        local("Noto Sans Mono Regular"),
+        url("https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSansMono/hinted/ttf/NotoSansMono-Regular.ttf") format("truetype");
+    font-weight: normal;
+}
+@font-face {
+    font-family: "Noto Sans Mono";
+    src: 
+        local("Noto Sans Mono Bold"),
+        url("https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSansMono/hinted/ttf/NotoSansMono-Bold.ttf") format("truetype");
+        font-weight: bold;
+}
+body{
+    font-family: "Noto Sans Mono", monospace;
+    font-size: 17px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#promo{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 25px;
+    margin: 35px 0;
+}
+#bcc{
+    color: #1aadaf;
+}
+#keywords{
+    font-size: 75%;
+}
+#pitch-link{
+    font-size: 78%;
+}
+.nicelink{
+    /* make visited links the same color as unvisited links */
+    color: LinkText;
+}
+main{
+    width: 60vw;
+}
+#galimgs{
+    display: flex;
+    gap: 15px;
+    overflow-x: hidden;
+}
+#imgal{
+    position: relative;
+    >img{
+        height: 400px;
+    }
+    >.galhand{
+        position: absolute;
+        top: 0;
+        height: 100%;
+        width: 55px;
+        background-color: #0004;
+        &:hover{
+            background-color: #0007;
+        }
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        >svg{
+            fill: none;
+            stroke: white;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            width: 90%;
+        }
+    }
+    #hand-left{
+        left: 0;
+        transform: translateX(-100%);
+    }
+    #hand-right{
+        right: 0;
+        transform: translateX(100%);
+    }
+}

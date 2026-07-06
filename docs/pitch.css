@@ -1,0 +1,10 @@
+body{
+    width: 50vw;
+    margin: 0 auto;
+    padding: 30px 0;
+    font-family: sans-serif;
+}
+#title{
+    text-align: center;
+    font-size: 200%;
+}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>BCC | The pitch</title>
+        <link rel="stylesheet" href="main.css">
+        <link rel="stylesheet" href="pitch.css">
+    </head>
+    <body>
+        <h1 id="title">The pitch</h1>
+        <main>
+        <p>
+BCC is a structurally-edited language designed to allow developers to write code and collaborate on projects more effectively. The main feature is that source code is stored as a binary format rather than plain text, and all variable/function/type references are by ID instead of string name. While this does pose challenges around integration with existing tooling (diffing, text searching, embedding snippets in websites, various LoC counters, etc.), necessitating the development of alternative, specialized tools, we believe that these costs are outweighed by...
+        </p>
+<details open>
+    <summary>The benefits (click to collapse)</summary>
+    <ul>
+        <li>
+            <h2>No complex name resolution rules</h2>
+            <p>
+Name resolution rules in existing programming languages are often convoluted, which not only poses problems to automatic code-generation tools, but also sometimes require the use of hacks to get around name shadowing problems, such as the (in)famous <code>const that = this;</code> in JavaScript.
+            </p>
+        </li>
+        <li>
+            <h2>Painless renaming</h2>
+            <p>
+Function and type names in stable public APIs are seldom changeable without great cost, and ones later found to be incorrectly designed cannot be directly replaced with new implementations under the same name without breaking old users (especially if the new interface happens to be the same or compatible with the old, where the meaning of legacy code might be silently changed without warning). Victims of this include <code>std::function</code> in the C++ standard library (obsoleted in favor of <code>std::copyable_function</code> and <code>std::move_only_function</code>), <code>Date</code> in JavaScript (to be replaced by various new Temporal classes such as <code>PlainDateTime</code>), and <code>input</code> in Python 2 (extremely unsafe, with <code>raw_input</code> being the safe version)<sup id="cite-ref-1"><a href="#cite-note-1">[1]</a></sup>. With ID-based references, we can simply rename the old function, and provide the new interface using the intuitive and obvious name (but a different ID). That way, old code will automatically refer to the legacy interface and still keep working.
+            </p>
+        </li>
+        <li>
+            <h2>More efficient compilation</h2>
+            <p>
+When the source code is already in AST form, the compiler doesn't need to scan over it again to parse it into a machine-readable format. Additionally, the editor tightly integrates with the compiler backend, and type inference calculations (for example) performed for code highlighting and autocomplete are directly reused in the backend, which reduces the amount of redundant work done.
+            </p>
+        </li>
+    </ul>
+</details>
+        </main>
+        <hr>
+        <footer>
+            <a id="cite-note-1" href="#cite-ref-1">1</a>: It did get fixed in Python 3, but then everyone knows how painful the Python 3 adoption was...
+        </footer>
+    </body>
+</html>
