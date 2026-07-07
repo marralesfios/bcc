@@ -39,7 +39,8 @@ function update_scrollhands() {
         hand_left.classList.add("scroll-valid");
     else
         hand_left.classList.remove("scroll-valid");
-    if (gallery.scrollLeft < gallery.scrollWidth - gallery.clientWidth)
+    console.log(gallery.scrollLeft, gallery.scrollWidth - gallery.clientWidth);
+    if (gallery.scrollLeft < gallery.scrollWidth - gallery.clientWidth - 1)
         hand_right.classList.add("scroll-valid");
     else
         hand_right.classList.remove("scroll-valid");

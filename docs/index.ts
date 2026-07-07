@@ -35,7 +35,8 @@ hover_frames(hand_right,(dur) => {
 function update_scrollhands(){
     if(gallery.scrollLeft) hand_left.classList.add("scroll-valid");
     else hand_left.classList.remove("scroll-valid");
-    if(gallery.scrollLeft < gallery.scrollWidth-gallery.clientWidth) hand_right.classList.add("scroll-valid");
+    console.log(gallery.scrollLeft,gallery.scrollWidth-gallery.clientWidth);
+    if(gallery.scrollLeft < gallery.scrollWidth-gallery.clientWidth-1) hand_right.classList.add("scroll-valid");
     else hand_right.classList.remove("scroll-valid");
     
 }
