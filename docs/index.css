@@ -25,15 +25,16 @@ body{
     align-items: center;
     font-size: 25px;
     margin: 35px 0;
+    >a{
+        font-size: 78%;
+        margin: 0.1lh 0;
+    }
 }
 #bcc{
     color: #1aadaf;
 }
 #keywords{
     font-size: 75%;
-}
-#pitch-link{
-    font-size: 78%;
 }
 .nicelink{
     /* make visited links the same color as unvisited links */

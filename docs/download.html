@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>BCC | The pitch</title>
+        <link rel="stylesheet" href="main.css">
+        <link rel="stylesheet" href="article.css">
+        <script type="module" src="copycode.js"></script>
+    </head>
+    <body>
+        <h1 id="title">Building from source</h1>
+        <main>
+        <p>
+BCC depends on many in-house dependencies, variously being header-only and requiring GNU Make to build. But worry not! We have made a simple "package manager" in Python that will automatically download and build all of them for you. (And it's fully self-contained — it doesn't mess with your <code>~</code> or environment variables in any way.)
+        </p><p>
+Note that we only support Linux builds for the time being. If you are on Windows, you may try building in WSL, but we can't guarantee it'll work.
+        </p>
+        <section>
+            <h2>Prerequisites</h2>
+            <ul>
+<li>Python 3</li>
+<li>GCC 16<sup id="cite-ref-1"><a href="#cite-note-1">[1]</a></sup></li>
+<li>git</li>
+<li>
+C/C++ libraries: <a href="https://github.com/nothings/stb">stb</a>, <a href="https://github.com/libsdl-org/SDL">SDL3</a>, <a href="https://github.com/harfbuzz/harfbuzz">harfbuzz</a>, <a href="https://gitlab.freedesktop.org/fontconfig/fontconfig">fontconfig</a>, <a href="https://github.com/uxlfoundation/oneTBB">tbb</a>. <sup id="cite-ref-2"><a href="#cite-note-2">[2]</a></sup><br>
+</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Building</h2>
+            <ol>
+<li>Download <a href="mpm.py" download="mpm.py">mpm.py</a>. You don't have to put it into an empty folder, since it creates a `mpm` subdirectory to put all downloaded files in.</li>
+<li>Download and build the library components (click the command to copy): <code class="code-block">./mpm.py cppp assembly glad sgl efficiency-bubble:bincode-backend efficiency-bubble:bincode-frontend</code></li>
+<li>Build the editor executable: <code class="code-block"><span class="shell-cmd">.</span> mpm/activate.sh <span class="shell-comment"># set environment variables for include and static library directories</span>
+<span class="shell-cmd">cd</span> mpm/pkgs/efficiency-bubble_bincode-frontend
+<span class="shell-cmd">make</span> bin/test</code></li>
+            </ol>
+            <p>
+That's it! Type <code>bin/test</code> into the terminal to launch the editor. (The first time start-up is a bit slower, since it needs to invoke GCC to compile a helper program. Don't worry, this doesn't need GCC 16, so the system GCC will do just fine.)
+            </p>
+            <p>
+Note: this is very much still a test program; the editor executable <em>must</em> be run with a CWD of <code><i>(directory of mpm.py)</i>/mpm/pkgs/efficiency-bubble_bincode-frontend</code>, or else it will fail! We will eventually address this in the real release.
+            </p>
+        </section>
+        </main>
+        <hr>
+        <footer>
+            <p>
+<a id="cite-note-1" href="#cite-ref-1">1</a>: Yes, you need GCC 16. Earlier versions WILL NOT work. Note that it doesn't have to be in your PATH as <code>gcc</code>/<code>g++</code>; you can build/download GCC 16 into another directory, and select it while running the package manager.
+            </p>
+            <p>
+<a id="cite-note-2" href="#cite-ref-2">2</a>:Most of them should be available in your distro's package manager; otherwise, you can probably find installation instructions from Google. As a <strong>last resort</strong>, get these libraries from source from the linked official repos and attempt to install them yourself — but I probably don't need to repeat why installing things into your system include and library directories without using your package manager is a bad idea.
+            </p>
+        </footer>
+    </body>
+</html>

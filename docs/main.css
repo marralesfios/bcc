@@ -1,5 +1,5 @@
 body{
-    background-color: #fff7ec;
+    background-color: #f9eddb;
 }
 h1{
     margin: 0;
@@ -9,4 +9,38 @@ hr{
     height: 0;
     border: none;
     border-top: 3px double black;
+}
+.code-block{
+    margin: 7px;
+    font-size: .85rem;
+    position: relative;
+    white-space: pre;
+    display: block;
+    background-color: #111;
+    color: #fafafa;
+    padding: 10px;
+    padding-right: 30px;
+    width: fit-content;
+    cursor: pointer;
+    >.copy-code{
+        position: absolute;
+        top: 15px;
+        right: 10px;
+        cursor: pointer;
+        appearance: none;
+        background: none;
+        border: none;
+        padding: 0;
+        >img{
+            display: block;
+            width: 10px;
+        }
+        height: fit-content;
+    }
+}
+.shell-cmd{
+    color: #33e4d2;
+}
+.shell-comment{
+    color: #bebebe;
 }
