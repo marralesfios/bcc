@@ -33,7 +33,7 @@ code.sspec{
     margin-left: 4ch;
 }
 .sspec-switch>:not(:first-child,.sspec-case){
-    margin-left: 8ch;
+    margin-left: 8ch !important;
 }
 .sspec-comment{
     color: green;
