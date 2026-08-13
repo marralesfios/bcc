@@ -1,0 +1,40 @@
+code.sspec, .sspec-class, .sspec-fn, .sspec-block{
+    display: flex;
+    flex-direction: column;
+}
+code.sspec{
+    gap: 0.5lh;
+}
+.sspec-declname{
+    color: #1414c9;
+}
+.sspec-decltype{
+    color: #60a329;
+}
+.sspec-tparam{
+    color: #b900b3;
+}
+.sspec-num{
+    color: purple;
+}
+.sspec-keyword{
+    font-weight: bold;
+}
+.sspec-keyfn{
+    color: #d48a00;
+}
+.sspec-keyobj{
+    color: #057d71;
+}
+.sspec-builtin-type{
+    color: #23926b;
+}
+.sspec-class>.sspec-declarator, :is(.sspec-fn,.sspec-block,.sspec-class)>.sspec-stmt:not(.sspec-else){
+    margin-left: 4ch;
+}
+.sspec-switch>:not(:first-child,.sspec-case){
+    margin-left: 8ch;
+}
+.sspec-comment{
+    color: green;
+}

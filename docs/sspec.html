@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>BCC | Data Serialization Specification</title>
+        <link rel="stylesheet" href="page.css">
+        <link rel="stylesheet" href="main.css">
+        <link rel="stylesheet" href="sspec.css">
+        <script type="module" src="ssgen.js"></script>
+        <style>
+            table.right-align>tbody>tr>td:not(:first-child){
+                text-align: right;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>
+            Data Serialization Specification v0.1
+        </h1>
+        <section>
+            <h2>1. Notation</h2>
+            <p>
+Pseudocode for a data types's consituents, as well as reference implementations for reading and writing each of the data types mentioned bellow will be given. Note that despite the <code>struct</code> keyword, the "declaration" is NOT meant to suggest any particular way of laying out or grouping your data. You might want to inline some of these types (such as muleb128) and make functions directly operate on their consituent(s), for example.
+            </p><p>
+The pseudocode for a type named <code>Data</code> will look something like:
+            </p>
+<template class="sspec" data-name="Data">
+    <struct-def>
+        <var-decl><builtin-type>u32</builtin-type><decl-name>field1</decl-name><code-comment>information</code-comment></var-decl>
+        <var-decl><builtin-type>u8</builtin-type><decl-name>field2</decl-name><code-comment>information</code-comment></var-decl>
+    </struct-def>
+    <read-fn>
+        <expr-bin data-op="="><expr-member><key-obj>object</key-obj><decl-name>field1</decl-name></expr-member><expr-call><key-fn>read</key-fn><builtin-type>u32</builtin-type></expr-call></expr-bin data-op="=">
+        <expr-bin data-op="="><expr-member><key-obj>object</key-obj><decl-name>field2</decl-name></expr-member><expr-call><key-fn>read</key-fn><builtin-type>u8</builtin-type></expr-call></expr-bin data-op="=">
+    </read-fn>
+    <write-fn>
+        <expr-call><key-fn>write</key-fn><builtin-type>u32</builtin-type><expr-member><key-obj>object</key-obj><decl-name>field1</decl-name></expr-member></expr-call>
+        <expr-call><key-fn>write</key-fn><builtin-type>u8</builtin-type><expr-member><key-obj>object</key-obj><decl-name>field2</decl-name></expr-member></expr-call>
+    </write-fn>
+</template>
+            <p>
+In the <code>read</code> function, the special variable <code>object</code> indicates the object being read. In the <code>write</code> function, it indicates the object being written/serialized. The first arguments of either function clarifies the type being read/written (their respective read/write functions will be invoked), and the common destination bytestream where all writes go to is elided for simplicity. Notice that the serialization and deserialization functions in the example above simply recursively serialize/deserialize the contained data members sequentially in declaration order. In the following definitions, functions of this nature will be abbreviated with the keyword <code>= sequential;</code> in place of the function body.
+            </p><p>
+In the <code>write</code> function, the last-written object can be changed through the special variable <code>last</code>. This is usually done after loops to eliminate branching, where it should be trivial to rewrite it as a condition inside the loop to test for the last iteration.
+            </p><p>
+Generic types are denoted <code>Type&lt;T&gt;</code>, in which case <code>T</code> is the parameter.
+            </p><p>
+Declaration, operators and control flow follow their obvious definitions, except that <code>switch</code> cases fall through if and only if the case is empty (alternatively: cases never fall through, but consecutive case labels are multiple conditions for entering the same case). Save for this exception, when in doubt, just follow C++'s semantics.
+            </p><p>
+Uninitialized values are not used, and declared but not-yet-assigned-to variables are uninitialized. This means that in a language like Python, you might get away with not declaring them at all.
+            </p><p>
+P.S. the data type is repeated in the signatures for read and write, so you can just do a text search if you want to go to the implementation of a specific type.
+            </p>
+        </section>
+        <section>
+            <h2>2. Fundamental Data Types</h2>
+            <section>
+                <h3>2.1 Basic integers</h3>
+                <p>
+The types <code>u8</code>, <code>u16</code>, <code>u32</code>, <code>u64</code>, <code>i8</code>, <code>i16</code>, <code>i32</code> and <code>i64</code> are respectively unsigned and signed 8-, 16-, 32- and 64-bit integers.
+Reading and writing follow 2's complement (for signed numbers), little-endian format.
+                </p>
+                <p>
+The types <code>typeid</code> and <code>funcid</code> are aliases of <code>u32</code>, but this might be changed later. Also see the <a href="#note-tfid">note about serializing IDs</a>.
+                </p>
+            </section>
+            <section>
+                <h3>2.2 Modified ULEB128</h3>
+                <p>
+This is the "Modified unsigned LEB128" format. It is variable-length and has the same encoding for numbers of any width, so that is specified in a generic parameter. The unsigned number's binary representation is grouped into 7-bit septets in little-endian (i.e. most significant septet last) format (zero-padding the last septet if necessary, though this should go without saying), and an eighth (most-significant) bit, which is one if and only if it is the last septet in this number, is added to each septet, forming bytes, which are written. This high bit indicates the length of the number, as reading can stop after a byte that has its highest bit set is found.
+                </p>
+<table class="right-align"><caption style="caption-side: top;">Example: 257</caption><tbody>
+<tr><td>Binary</td><td colspan="2">100000001</td></tr>
+<tr><td>Septet groups</td><td>0000010</td><td>0000001</td></tr>
+<tr><td>Location</td><td>middle</td><td>end</td></tr>
+<tr><td>Bytes</td><td>00000010</td><td>10000001</td></tr></tbody></table>
+                <p>
+Further reading (this is the "unmodified" version with only one difference: the high bits of all bytes are flipped in comparison to the encoding just described): <a href="https://en.wikipedia.org/wiki/LEB128#Unsigned_LEB128">https://en.wikipedia.org/wiki/LEB128#Unsigned_LEB128</a>
+                </p>
+<template class="sspec" data-name="muleb128" data-parameters="T">
+    <struct-def>
+        <var-decl><param-type>T</param-type><decl-name>value</decl-name></var-decl>
+    </struct-def>
+    <read-fn>
+        <expr-bin data-op="="><expr-member><key-obj>object</key-obj><decl-name>value</decl-name></expr-member><expr-num>0</expr-num></expr-bin data-op="=">
+        <var-decl><builtin-type>u8</builtin-type><decl-name>byte</decl-name></var-decl>
+        <var-decl><builtin-type>u16</builtin-type><expr-bin data-op="="><decl-name>bit_index</decl-name><expr-num>0</expr-num></expr-bin data-op="="></var-decl>
+        <loop-dowhile>
+            <expr-bin data-op="=="><expr-paren><expr-bin data-op="&"><decl-name>expr</decl-name><expr-num>0x80</expr-num></expr-bin></expr-paren><expr-num>0</expr-num></expr-bin>
+            <expr-bin data-op="="><decl-name>byte</decl-name><expr-call><key-fn>read</key-fn><builtin-type>u8</builtin-type></expr-call></expr-bin data-op="=">
+            <expr-bin data-op="|="><expr-member><key-obj>object</key-obj><decl-name>value</decl-name></expr-member><expr-paren><expr-bin data-op="&"><decl-name>byte</decl-name><expr-num>0x7f</expr-num></expr-bin></expr-paren></expr-bin>
+        </loop-dowhile>
+    </read-fn>
+    <write-fn>
+        <loop-dowhile>
+            <expr-bin data-op=">"><expr-member><key-obj>object</key-obj><decl-name>value</decl-name></expr-member><expr-num>0</expr-num></expr-bin>
+            <expr-call><key-fn>write</key-fn><builtin-type>u8</builtin-type><expr-bin data-op="&"><expr-member><key-obj>object</key-obj><decl-name>value</decl-name></expr-member><expr-num>0x7f</expr-num></expr-bin></expr-call>
+            <expr-bin data-op=">>="><expr-member><key-obj>object</key-obj><decl-name>value</decl-name></expr-member><expr-num>7</expr-num></expr-bin>
+        </loop-dowhile>
+        <expr-bin data-op="|="><key-obj>last</key-obj><expr-num>0x80</expr-num></expr-bin>
+    </write-fn>
+</template>
+            </section>
+            <section>
+                <h3>2.3 String</h3>
+                <p>
+A simple UTF-8 string. Note that memory allocation is elided: we assume that reading <code>size</code> automatically allocates <code>chars</code> correctly.
+                </p>
+<template class="sspec" data-name="string">
+    <struct-def>
+        <var-decl><type-inst><decl-type>muleb128</decl-type><builtin-type>u64</builtin-type></type-inst><decl-name>size</decl-name></var-decl>
+        <var-decl><builtin-type>u8</builtin-type><expr-index><decl-name>chars</decl-name><decl-name>size</decl-name></expr-index></var-decl>
+    </struct-def>
+    <read-fn></read-fn>
+    <write-fn></write-fn>
+</template>
+            </section>
+            <section>
+                <h3>2.4 Color</h3>
+                <p>
+An sRGB-space color.
+                </p>
+<template class="sspec" data-name="Color">
+    <struct-def>
+        <var-decl><builtin-type>u8</builtin-type><decl-name>red</decl-name></var-decl>
+        <var-decl><builtin-type>u8</builtin-type><decl-name>green</decl-name></var-decl>
+        <var-decl><builtin-type>u8</builtin-type><decl-name>blue</decl-name></var-decl>
+    </struct-def>
+    <read-fn></read-fn>
+    <write-fn></write-fn>
+</template>
+            </section>
+        </section>
+        <section>
+            <h2>3. Composite Data Types</h2>
+            <section>
+                <h3>3.1 Function Signature</h3>
+                <p>
+A simple data structure representing a function's signature. Recall that functions always have exactly one argument.
+                </p>
+<template class="sspec" data-name="FunctionSignature">
+    <struct-def>
+        <var-decl><builtin-type>typeid</builtin-type><decl-name>ret</decl-name></var-decl>
+        <var-decl><builtin-type>typeid</builtin-type><decl-name>par</decl-name></var-decl>
+    </struct-def>
+    <read-fn></read-fn>
+    <write-fn></write-fn>
+</template>
+            </section>
+            <section>
+                <h3>3.2 Type pack</h3>
+                <p>
+An array of type IDs. Works more or less the same as <code>string</code>.
+                </p>
+<template class="sspec" data-name="TypePack">
+    <struct-def>
+        <var-decl><type-inst><decl-type>muleb128</decl-type><builtin-type>u64</builtin-type></type-inst><decl-name>size</decl-name></var-decl>
+        <var-decl><builtin-type>typeid</builtin-type><expr-index><decl-name>types</decl-name><decl-name>size</decl-name></expr-index></var-decl>
+    </struct-def>
+    <read-fn></read-fn>
+    <write-fn></write-fn>
+</template>
+            </section>
+            <section>
+                <h3>3.3 AST Node</h3>
+                <p>
+An AST Node. <code>nchld-of</code> is the intrinsic number of children for a node type, or <code>VARIABLE</code> (internally a value of 2^32-1) if it is not fixed:
+                </p>
+<table><tbody>
+<tr><th>Type</th><th># children</th></tr>
+<tr><td>uint32</td><td rowspan="10">0</td></tr>
+<tr><td>uint64</td></tr>
+<tr><td>sint32</td></tr>
+<tr><td>bool</td></tr>
+<tr><td>arg</td></tr>
+<tr><td>getvar</td></tr>
+<tr><td>uint32sym</td></tr>
+<tr><td>fnsym</td></tr>
+<tr><td>ntype</td></tr>
+<tr><td>import-stub</td></tr>
+<tr><td>setvar</td><td rowspan="2">1</td></tr>
+<tr><td>packind</td></tr>
+<tr><td>havevar</td><td>2</td></tr>
+<tr><td>fork</td><td>3</td></tr>
+<tr><td>pack</td><td rowspan="3">variable</td></tr>
+<tr><td>comma</td></tr>
+<tr><td>call-builtin</td></tr></tbody></table>
+                <p>
+<code>has-extended-data</code> denotes whether an AST node type needs an extra 64-bit field to store data. If this is true, then the node must not have children (such that storage for the pointer to the children array can be reused to store this field). Currently, exactly one type of node has extended data: <code>uint64</code>.
+                </p>
+<template class="sspec" data-name="NodeType">
+    <enum-def>
+        <enum-underlying><builtin-type>u8</builtin-type></enum-underlying>
+        <code-comment>u32 literal</code-comment>
+        <expr-bin data-op="="><decl-name>UINT32</decl-name><expr-num>0</expr-num></expr-bin>
+        <code-comment>u64 literal</code-comment>
+        <expr-bin data-op="="><decl-name>UINT64</decl-name><expr-num>1</expr-num></expr-bin>
+        <code-comment>tuple literal</code-comment>
+        <expr-bin data-op="="><decl-name>PACK</decl-name><expr-num>2</expr-num></expr-bin>
+        <code-comment>extended comma expression</code-comment>
+        <expr-bin data-op="="><decl-name>COMMA</decl-name><expr-num>3</expr-num></expr-bin>
+        <code-comment>tuple indexing</code-comment>
+        <expr-bin data-op="="><decl-name>PACKIND</decl-name><expr-num>4</expr-num></expr-bin>
+        <code-comment>reference to function argument</code-comment>
+        <expr-bin data-op="="><decl-name>ARG</decl-name><expr-num>5</expr-num></expr-bin>
+        <code-comment>invoke magic function</code-comment>
+        <expr-bin data-op="="><decl-name>CALL_BUILTIN</decl-name><expr-num>9</expr-num></expr-bin>
+        <code-comment>assign to variable</code-comment>
+        <expr-bin data-op="="><decl-name>SETVAR</decl-name><expr-num>10</expr-num></expr-bin>
+        <code-comment>read variable</code-comment>
+        <expr-bin data-op="="><decl-name>GETVAR</decl-name><expr-num>11</expr-num></expr-bin>
+        <code-comment>let-in expression: declare variable with a value, but only throughout one expression</code-comment>
+        <expr-bin data-op="="><decl-name>HAVEVAR</decl-name><expr-num>12</expr-num></expr-bin>
+        <code-comment>bool literal</code-comment>
+        <expr-bin data-op="="><decl-name>BOOL</decl-name><expr-num>20</expr-num></expr-bin>
+        <code-comment>ternary operator</code-comment>
+        <expr-bin data-op="="><decl-name>FORK</decl-name><expr-num>21</expr-num></expr-bin>
+        <code-comment>i32 literal</code-comment>
+        <expr-bin data-op="="><decl-name>SINT32</decl-name><expr-num>30</expr-num></expr-bin>
+        <code-comment>DEPRECATED: external u32 (linker import)</code-comment>
+        <expr-bin data-op="="><decl-name>UINT32SYM</decl-name><expr-num>100</expr-num></expr-bin>
+        <code-comment>DEPRECATED: external function pointer (linker import)</code-comment>
+        <expr-bin data-op="="><decl-name>FNSYM</decl-name><expr-num>200</expr-num></expr-bin>
+        <code-comment>must be the root node of a function; indicates that this function's implementation should be imported (similar to Java's native keyword)</code-comment>
+        <expr-bin data-op="="><decl-name>IMPORT_STUB</decl-name><expr-num>254</expr-num></expr-bin>
+        <code-comment>placeholder node, i.e. missing / unwritten hole in the source code</code-comment>
+        <expr-bin data-op="="><decl-name>NTYPE</decl-name><expr-num>255</expr-num></expr-bin>
+    </enum-def>
+</template>
+<template class="sspec" data-name="ASTNode">
+    <struct-def>
+        <var-decl><decl-type>NodeType</decl-type><decl-name>type</decl-name></var-decl>
+        <var-decl><builtin-type>u32</builtin-type><decl-name>prim</decl-name></var-decl>
+        <var-decl><builtin-type>u32</builtin-type><decl-name>nchld</decl-name></var-decl>
+        <union-decl>
+            <var-decl><builtin-type>u64</builtin-type><decl-name>data</decl-name></var-decl>
+            <code-comment>is internally a pointer</code-comment>
+            <var-decl><decl-type>ASTNode</decl-type><expr-index><decl-name>children</decl-name><decl-name>nchld</decl-name></expr-index></var-decl>
+        </union-decl>
+    </struct-def>
+    <read-fn>
+        <expr-bin data-op="="><expr-member><key-obj>object</key-obj><decl-name>type</decl-name></expr-member><expr-call><key-fn>read</key-fn><builtin-type>u8</builtin-type></expr-call></expr-bin>
+        <expr-bin data-op="="><expr-member><key-obj>object</key-obj><decl-name>prim</decl-name></expr-member><expr-member><expr-call><key-fn>read</key-fn><type-inst><decl-type>muleb128</decl-type><builtin-type>u32</builtin-type></type-inst></expr-call><decl-name>value</decl-name></expr-member></expr-bin>
+        <expr-bin data-op="="><expr-member><key-obj>object</key-obj><decl-name>nchld</decl-name></expr-member><expr-call><code-comment>nchld-of</code-comment><expr-member><key-obj>object</key-obj><decl-name>type</decl-name></expr-member></expr-call></expr-bin>
+        <if-stmt>
+            <expr-bin data-op="=="><expr-member><key-obj>object</key-obj><decl-name>nchld</decl-name></expr-member><code-comment>VARIABLE</code-comment></expr-bin>
+            <expr-bin data-op="="><expr-member><key-obj>object</key-obj><decl-name>nchld</decl-name></expr-member><expr-member><expr-call><key-fn>read</key-fn><type-inst><decl-type>muleb128</decl-type><builtin-type>u32</builtin-type></type-inst></expr-call><decl-name>value</decl-name></expr-member></expr->
+        </if-stmt>
+        <if-stmt>
+            <expr-bin data-op="=="><expr-member><key-obj>object</key-obj><decl-name>nchld</decl-name></expr-member><expr-num>0</expr-num></expr-bin>
+            <if-stmt>
+                <expr-call><code-comment>has-extended-data</code-comment><expr-member><key-obj>object</key-obj><decl-name>type</decl-name></expr-member></expr-call>
+                <expr-bin data-op="="><expr-member><key-obj>object</key-obj><decl-name>data</decl-name></expr-member><expr-call><key-fn>read</key-fn><builtin-type>u64</builtin-type></expr-call></expr-bin>
+                <else-label></else-label>
+                <expr-bin data-op="="><expr-member><key-obj>object</key-obj><decl-name>data</decl-name></expr-member><expr-num>0</expr-num></expr-bin>
+            </if-stmt>
+        </if-stmt>
+    </read-fn>
+    <write-fn>
+        <code-comment>(TODO)</code-comment>
+    </write-fn>
+</template>
+            </section>
+            <section>
+                <h3>3.4 Function</h3>
+                <p>
+A function type.
+                </p>
+<template class="sspec" data-name="Function">
+    <struct-def>
+        <var-decl><builtin-type>FunctionSignature</builtin-type><decl-name>sig</decl-name></var-decl>
+        <var-decl><builtin-type>string</builtin-type><decl-name>cname</decl-name></var-decl>
+        <var-decl><builtin-type>ASTNode</builtin-type><decl-name>root</decl-name></var-decl>
+    </struct-def>
+    <read-fn></read-fn>
+    <write-fn></write-fn>
+</template>
+            </section>
+            <section>
+                <h3>3.5 Type info</h3>
+                <p>
+Information about a type. Note that user-defined types are not supported yet, so there are no records for struct fields.
+                </p>
+                <p>
+The type <code>void</code> here serves as a "default" union member. It is explicitly selected by "constructing" an object of type <code>void</code> via <code>{}</code> and assigning to that member. (Internally in the compiler, the union is actually a non-owning pointer, and this state is represented with a null pointer.)
+                </p>
+<template class="sspec" data-name="TypeCategory">
+    <enum-def>
+        <enum-underlying></enum-underlying>
+        <decl-name>VOID</decl-name>
+        <decl-name>SIGNED_INTEGRAL</decl-name>
+        <decl-name>UNSIGNED_INTEGRAL</decl-name>
+        <decl-name>PACK</decl-name>
+        <decl-name>FUNCTION_POINTER</decl-name>
+    </enum-def>
+</template>
+<template class="sspec" data-name="TypeInfo">
+    <struct-def>
+        <var-decl><builtin-type>u64</builtin-type><decl-name>size</decl-name></var-decl>
+        <var-decl><builtin-type>u64</builtin-type><decl-name>align</decl-name></var-decl>
+        <var-decl><decl-type>TypeCategory</decl-type><decl-name>type</decl-name></var-decl>
+        <union-decl>
+            <var-decl><decl-type>void</decl-type><decl-name>nothing</decl-name></var-decl>
+            <var-decl><decl-type>TypePack</decl-type><decl-name>pack</decl-name><code-comment>When the type is PACK</code-comment></var-decl>
+            <var-decl><decl-type>FunctionSignature</decl-type><decl-name>sig</decl-name><code-comment>When the type is FUNCTION_POINTER</code-comment></var-decl>
+        </union-decl>
+    </struct-def>
+    <read-fn>
+        <expr-bin data-op="="><expr-member><key-obj>object</key-obj><decl-name>size</decl-name></expr-member><expr-member><expr-call><key-fn>read</key-fn><type-inst><decl-type>muleb128</decl-type><builtin-type>u64</builtin-type></type-inst></expr-call><decl-name>value</decl-name></expr-member></expr-bin>
+        <expr-bin data-op="="><expr-member><key-obj>object</key-obj><decl-name>align</decl-name></expr-member><expr-member><expr-call><key-fn>read</key-fn><type-inst><decl-type>muleb128</decl-type><builtin-type>u64</builtin-type></type-inst></expr-call><decl-name>value</decl-name></expr-member></expr-bin>
+        <switch-stmt>
+            <expr-member><key-obj>object</key-obj><decl-name>type</decl-name></expr-member>
+            <case-label><decl-name>PACK</decl-name></case-label>
+            <expr-bin data-op="="><expr-member><key-obj>object</key-obj><decl-name>pack</decl-name></expr-member><expr-call><key-fn>read</key-fn><decl-type>TypePack</decl-type></expr-call></expr-bin>
+            <case-label><decl-name>FUNCTION_POINTER</decl-name></case-label>
+            <expr-bin data-op="="><expr-member><key-obj>object</key-obj><decl-name>sig</decl-name></expr-member><expr-call><key-fn>read</key-fn><decl-type>FunctionSignature</decl-type></expr-call></expr-bin>
+            <default-label></default-label>
+            <expr-bin data-op="="><expr-member><key-obj>object</key-obj><decl-name>nothing</decl-name></expr-member><init-brace></init-brace></expr-bin>
+        </switch-stmt>
+    </read-fn>
+    <write-fn>
+        <expr-call><key-fn>write</key-fn><type-inst><decl-type>muleb128</decl-type><builtin-type>u64</builtin-type></type-inst><init-brace><expr-bin data-op="="><decl-name>.value</decl-name><expr-member><key-obj>object</key-obj><decl-name>size</decl-name></expr-member></expr-bin></init-brace></expr-call>
+        <expr-call><key-fn>write</key-fn><type-inst><decl-type>muleb128</decl-type><builtin-type>u64</builtin-type></type-inst><init-brace><expr-bin data-op="="><decl-name>.value</decl-name><expr-member><key-obj>object</key-obj><decl-name>align</decl-name></expr-member></expr-bin></init-brace></expr-call>
+        <expr-call><key-fn>write</key-fn><builtin-type>u8</builtin-type><expr-member><key-obj>object</key-obj><decl-name>type</decl-name></expr-member></expr-call>
+        <switch-stmt>
+            <expr-member><key-obj>object</key-obj><decl-name>type</decl-name></expr-member>
+            <case-label><decl-name>PACK</decl-name></case-label>
+            <expr-call><key-fn>write</key-fn><decl-type>TypePack</decl-type><expr-member><key-obj>object</key-obj><decl-name>pack</decl-name></expr-member></expr-call>
+            <case-label><decl-name>FUNCTION_POINTER</decl-name></case-label>
+            <expr-call><key-fn>write</key-fn><decl-type>FunctionSignature</decl-type><expr-member><key-obj>object</key-obj><decl-name>sig</decl-name></expr-member></expr-call>
+            <default-label></default-label>
+        </switch-stmt>
+    </write-fn>
+</template>
+            </section>
+            <section>
+                <h3>3.6 Entity pool</h3>
+                <p>
+A mapping from IDs to entries, where <code>I</code> is the index type and <code>T</code> is the element type. Here, <code>Map</code> is an associative array. It can be implemented with a hashmap. It is accessed with the [] indexing opearators, as found in many languages, and <code>map.size()</code> is the number of elements in the hashmap. We require it to fit inside the index type <code>I</code>, so we will assume that <code>size()</code> has a return type of <code>I</code>, even though you might need to insert a cast from <code>u64</code> to <code>u32</code> in practice.
+                </p>
+                <h4 id="note-tfid" style="margin: 0;">A note on ID serialization</h4>
+                <p style="margin-top: .5lh;">
+The types and functions must be serialized such that the entity with id N is the N+1-th entity that is serialized. In other words, the IDs must be sorted and contiguous starting from 0. In practice, because hashmap keys are not sorted and because editing may leave "holes" in the IDs, reassigning IDs when serializing is necessary. One way to do this is to directly iterate over the hashmap in arbitrary order, keeping a mapping from the original IDs to the iteration index, and serialize the iteration indices in place of IDs. The current compiler implementation uses this algorithm internally.
+<br>
+(This rule is subject to change.)
+                </p>
+<template class="sspec" data-name="EntityPool" data-parameters="I,T">
+    <struct-def>
+        <var-decl><type-inst><builtin-type>Map</builtin-type><param-type>I</param-type><param-type>T</param-type></type-inst><decl-name>map</decl-name></var-decl>
+    </struct-def>
+    <read-fn>
+        <var-decl><param-type>I</param-type><expr-bin data-op="="><decl-name>size</decl-name><expr-member><expr-call><key-fn>read</key-fn><type-inst><decl-type>muleb128</decl-type><param-type>I</param-type></type-inst></expr-call><decl-name>value</decl-name></expr-member></expr-bin></var-decl>
+        <loop-for>
+            <var-decl><param-type>I</param-type><expr-bin data-op="="><decl-name>i</decl-name><expr-num>0</expr-num></expr-bin></var-decl>
+            <expr-bin data-op="<"><decl-name>i</decl-name><decl-name>size</decl-name></expr-bin>
+            <expr-incr><decl-name>i</decl-name></expr-incr>
+            <expr-bin data-op="="><expr-index><expr-member><key-obj>object</key-obj><decl-name>map</decl-name></expr-member><decl-name>i</decl-name></expr-index><expr-call><key-fn>read</key-fn><param-type>T</param-type></expr-call></expr-bin>
+        </loop-for>
+    </read-fn>
+    <write-fn>
+        <expr-call><key-fn>write</key-fn><type-inst><decl-type>muleb128</decl-type><param-type>I</param-type></type-inst><init-brace><expr-bin data-op="="><decl-name>.value</decl-name><expr-call><expr-member><expr-member><key-obj>object</key-obj><decl-name>map</decl-name></expr-member><decl-name>size</decl-name></expr-member></expr-call></expr-bin></init-brace></expr-call>
+        <blank-line></blank-line>
+        <code-comment>In order of increasing, consecutive typeids. See note above</code-comment>
+        <loop-foreach>
+            <param-type>T</param-type><decl-name>val</decl-name><expr-member><key-obj>object</key-obj><decl-name>map</decl-name></expr-member>
+            <expr-call><key-fn>write</key-fn><param-type>T</param-type><decl-name>val</decl-name></expr-call>
+        </loop-foreach>
+    </write-fn>
+</template>
+            </section>
+            <section>
+                <h3>3.7 Project entity pool</h3>
+                <p>
+This is the main data structure containing all data needed to compile a program.
+                </p>
+<template class="sspec" data-name="ProjectEntitiesPool">
+    <struct-def>
+        <var-decl><type-inst><decl-type>EntityPool</decl-type><builtin-type>typeid</builtin-type><decl-type>TypeInfo</decl-type></type-inst><decl-name>td</decl-name></var-decl>
+        <var-decl><type-inst><decl-type>EntityPool</decl-type><builtin-type>funcid</builtin-type><decl-type>Function</decl-type></type-inst><decl-name>fd</decl-name></var-decl>
+    </struct-def>
+    <read-fn></read-fn>
+    <write-fn></write-fn>
+</template>
+            </section>
+            <section>
+                <h3>3.8 Name</h3>
+                <p>
+A data structure storing the user-friendly display name of an entity.
+                </p>
+<template class="sspec" data-name="Name">
+    <struct-def>
+        <var-decl><decl-type>string</decl-type><decl-name>name</decl-name></var-decl>
+        <var-decl><decl-type>Color</decl-type><decl-name>name</decl-name></var-decl>
+    </struct-def>
+    <read-fn></read-fn>
+    <write-fn></write-fn>
+</template>
+            </section>
+            <section>
+                <h3>3.9 Name table</h3>
+                <p>
+A table mapping function IDs to user-friendly display names.
+                </p>
+<template class="sspec" data-name="NameDatabase">
+    <struct-def>
+        <var-decl><type-inst><builtin-type>Map</builtin-type><builtin-type>funcid</builtin-type><decl-type>Name</decl-type></type-inst><decl-name>fnames</decl-name></var-decl>
+    </struct-def>
+    <read-fn>
+        <var-decl><builtin-type>u64</builtin-type><expr-bin data-op="="><decl-name>size</decl-name><expr-member><expr-call><key-fn>read</key-fn><type-inst><decl-type>muleb128</decl-type><builtin-type>u64</builtin-type></type-inst></expr-call><decl-name>value</decl-name></expr-member></expr-bin></var-decl>
+        <loop-for>
+            <var-decl><builtin-type>u64</builtin-type><expr-bin data-op="="><decl-name>i</decl-name><expr-num>0</expr-num></expr-bin></var-decl>
+            <expr-bin data-op="<"><decl-name>i</decl-name><decl-name>size</decl-name></expr-bin>
+            <expr-incr><decl-name>i</decl-name></expr-incr>
+            <var-decl><builtin-type>funcid</builtin-type><expr-bin data-op="="><decl-name>k</decl-name><expr-member><expr-call><key-fn>read</key-fn><type-inst><decl-type>muleb128</decl-type><builtin-type>funcid</builtin-type></type-inst></expr-call><decl-name>value</decl-name></expr-member></expr-bin></var-decl>
+            <expr-bin data-op="="><expr-index><expr-member><key-obj>object</key-obj><decl-name>fname</decl-name></expr-member><decl-name>k</decl-name></expr-index><expr-call><key-fn>read</key-fn><decl-type>Name</decl-type></expr-call></expr-bin>
+        </loop-for>
+    </read-fn>
+    <write-fn>
+        <expr-call><key-fn>write</key-fn><type-inst><decl-type>muleb128</decl-type><builtin-type>u64</builtin-type></type-inst><init-brace><expr-bin data-op="="><decl-name>.value</decl-name><expr-call><expr-member><expr-member><key-obj>object</key-obj><decl-name>map</decl-name></expr-member><decl-name>size</decl-name></expr-member></expr-call></expr-bin></init-brace></expr-call>
+        <blank-line></blank-line>
+        <code-comment>Arbitrary order</code-comment>
+        <loop-foreach>
+            <key-word>auto</key-word><init-brace><decl-name>key</decl-name><decl-name>val</decl-name></init-brace><expr-member><key-obj>object</key-obj><decl-name>map</decl-name></expr-member>
+            <expr-call><key-fn>write</key-fn><type-inst><decl-type>muleb128</decl-type><builtin-type>funcid</builtin-type></type-inst><init-brace><expr-bin data-op="="><decl-name>.value</decl-name><decl-name>key</decl-name></expr-bin></init-brace></expr-call>
+            <expr-call><key-fn>write</key-fn><decl-type>Name</decl-type><decl-name>val</decl-name></expr-call>
+        </loop-foreach>
+    </write-fn>
+</template>
+            </section>
+            <section>
+                <h3>3.10 Program</h3>
+                <p>
+The master data structure, containing all information about a stored program. This is the data structured stored in a save file.
+                </p>
+<template class="sspec" data-name="ProgramData">
+    <struct-def>
+        <var-decl><decl-type>ProjectEntitiesPool</decl-type><decl-name>entities</decl-name></var-decl>
+        <var-decl><decl-type>NameDatabase</decl-type><decl-name>names</decl-name></var-decl>
+    </struct-def>
+    <read-fn></read-fn>
+    <write-fn></write-fn>
+</template>
+            </section>
+        </section>
+    </body>
+</html>

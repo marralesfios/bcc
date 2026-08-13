@@ -35,11 +35,21 @@ hover_frames(hand_right,(dur) => {
 function update_scrollhands(){
     if(gallery.scrollLeft) hand_left.classList.add("scroll-valid");
     else hand_left.classList.remove("scroll-valid");
-    console.log(gallery.scrollLeft,gallery.scrollWidth-gallery.clientWidth);
     if(gallery.scrollLeft < gallery.scrollWidth-gallery.clientWidth-1) hand_right.classList.add("scroll-valid");
-    else hand_right.classList.remove("scroll-valid");
-    
+    else hand_right.classList.remove("scroll-valid");   
 }
 gallery.addEventListener("scroll",update_scrollhands);
 new ResizeObserver(update_scrollhands).observe(gallery_viewport);
 update_scrollhands();
+
+const QUIPS = [
+    "Efficiency throughout the development process",
+    "100% fewer syntax errors than competitors, guaranteed!",
+    "More integrated than Visual Studio"
+];
+const quip = document.getElementById("quip") as HTMLParagraphElement;
+function set_quip(){
+    quip.textContent = QUIPS[Math.floor(Math.random() * QUIPS.length)];
+}
+set_quip();
+quip.addEventListener("click",set_quip);

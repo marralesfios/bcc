@@ -15,9 +15,6 @@
 body{
     font-family: "Noto Sans Mono", monospace;
     font-size: 17px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
 }
 #promo{
     display: flex;
@@ -92,4 +89,8 @@ main{
         right: 0;
         transform: translateX(100%);
     }
+}
+#quip{
+    cursor: pointer;
+    user-select: none;
 }

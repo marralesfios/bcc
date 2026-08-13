@@ -1,8 +1,18 @@
+html{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 body{
     background-color: #f9eddb;
 }
 h1{
     margin: 0;
+}
+small{
+    display: inline flow-root;
+    font-size: 75%;
+    line-height: 1.2;
 }
 hr{
     width: 5%;
@@ -10,33 +20,46 @@ hr{
     border: none;
     border-top: 3px double black;
 }
-.code-block{
-    margin: 7px;
-    font-size: .85rem;
-    position: relative;
+code.block{
+    &.dark{
+        background-color: #111;
+        color: #fafafa;
+    }
+    &.compact{
+        font-size: .85rem;
+    }
     white-space: pre;
     display: block;
-    background-color: #111;
-    color: #fafafa;
     padding: 10px;
-    padding-right: 30px;
     width: fit-content;
-    cursor: pointer;
-    >.copy-code{
-        position: absolute;
-        top: 15px;
-        right: 10px;
+    &.copyable{
+        padding-right: 30px;
         cursor: pointer;
-        appearance: none;
-        background: none;
-        border: none;
-        padding: 0;
-        >img{
-            display: block;
-            width: 10px;
+        position: relative;
+        >.copy-code{
+            position: absolute;
+            top: 15px;
+            right: 10px;
+            cursor: pointer;
+            appearance: none;
+            background: none;
+            border: none;
+            padding: 0;
+            >img{
+                display: block;
+                width: 10px;
+            }
+            height: fit-content;
         }
-        height: fit-content;
     }
+}
+table{
+    border-collapse: collapse;
+}
+td, th{
+    border: 1px solid black;
+    padding-inline: 3px;
+    text-align: center;
 }
 .shell-cmd{
     color: #33e4d2;

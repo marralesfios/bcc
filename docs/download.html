@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>BCC | The pitch</title>
+        <title>BCC | Building from source</title>
         <link rel="stylesheet" href="main.css">
         <link rel="stylesheet" href="article.css">
         <script type="module" src="copycode.js"></script>
@@ -31,8 +31,8 @@ C/C++ libraries: <a href="https://github.com/nothings/stb">stb</a>, <a href="htt
             <h2>Building</h2>
             <ol>
 <li>Download <a href="mpm.py" download="mpm.py">mpm.py</a>. You don't have to put it into an empty folder, since it creates a `mpm` subdirectory to put all downloaded files in.</li>
-<li>Download and build the library components (click the command to copy): <code class="code-block">./mpm.py cppp assembly glad sgl efficiency-bubble:bincode-backend efficiency-bubble:bincode-frontend</code></li>
-<li>Build the editor executable: <code class="code-block"><span class="shell-cmd">.</span> mpm/activate.sh <span class="shell-comment"># set environment variables for include and static library directories</span>
+<li>Download and build the library components (click the command to copy): <code class="block dark copyable compact">./mpm.py cppp assembly glad sgl efficiency-bubble:bincode-backend efficiency-bubble:bincode-frontend</code></li>
+<li>Build the editor executable: <code class="block dark copyable compact"><span class="shell-cmd">.</span> mpm/activate.sh <span class="shell-comment"># set environment variables for include and static library directories</span>
 <span class="shell-cmd">cd</span> mpm/pkgs/efficiency-bubble_bincode-frontend
 <span class="shell-cmd">make</span> bin/test</code></li>
             </ol>
