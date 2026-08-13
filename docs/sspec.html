@@ -87,7 +87,8 @@ Further reading (this is the "unmodified" version with only one difference: the 
         <loop-dowhile>
             <expr-bin data-op="=="><expr-paren><expr-bin data-op="&"><decl-name>expr</decl-name><expr-num>0x80</expr-num></expr-bin></expr-paren><expr-num>0</expr-num></expr-bin>
             <expr-bin data-op="="><decl-name>byte</decl-name><expr-call><key-fn>read</key-fn><builtin-type>u8</builtin-type></expr-call></expr-bin data-op="=">
-            <expr-bin data-op="|="><expr-member><key-obj>object</key-obj><decl-name>value</decl-name></expr-member><expr-paren><expr-bin data-op="&"><decl-name>byte</decl-name><expr-num>0x7f</expr-num></expr-bin></expr-paren></expr-bin>
+            <expr-bin data-op="|="><expr-member><key-obj>object</key-obj><decl-name>value</decl-name></expr-member><expr-paren><expr-bin data-op="<<"><expr-paren><expr-bin data-op="&"><decl-name>byte</decl-name><expr-num>0x7f</expr-num></expr-bin></expr-paren><decl-name>bit_index</decl-name></expr-bin></expr-paren></expr-bin>
+            <expr-bin data-op="+="><decl-name>bit_index</decl-name><expr-num>7</expr-num></expr-bin>
         </loop-dowhile>
     </read-fn>
     <write-fn>
