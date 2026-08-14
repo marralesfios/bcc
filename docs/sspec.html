@@ -70,9 +70,10 @@ This is the "Modified unsigned LEB128" format. It is variable-length and has the
                 </p>
 <table class="right-align"><caption style="caption-side: top;">Example: 257</caption><tbody>
 <tr><td>Binary</td><td colspan="2">100000001</td></tr>
-<tr><td>Septet groups</td><td>0000010</td><td>0000001</td></tr>
+<tr><td>Septet groups (BE)</td><td>0000010</td><td>0000001</td></tr>
+<tr><td>Septet groups (LE)</td><td>0000001</td><td>0000010</td></tr>
 <tr><td>Location</td><td>middle</td><td>end</td></tr>
-<tr><td>Bytes</td><td>00000010</td><td>10000001</td></tr></tbody></table>
+<tr><td>Bytes</td><td>00000001</td><td>10000010</td></tr></tbody></table>
                 <p>
 Further reading (this is the "unmodified" version with only one difference: the high bits of all bytes are flipped in comparison to the encoding just described): <a href="https://en.wikipedia.org/wiki/LEB128#Unsigned_LEB128">https://en.wikipedia.org/wiki/LEB128#Unsigned_LEB128</a>
                 </p>
