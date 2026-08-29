@@ -64,8 +64,9 @@ function keyobj(key: string){
 function struct_or_union_decl_line(name: HTMLElement | null,type: "struct"|"union"){
     const dl = document.createElement("span");
     dl.classList.add("sspec-decl-header");
+    dl.append(keyword(type));
     if(name !== null){
-        dl.append(keyword(type)," ");
+        dl.append(" ");
         dl.append(name.cloneNode(true));
     }
     dl.append("{");
