@@ -1,4 +1,4 @@
-for(const el of document.getElementsByClassName("code-block")){
+for(const el of document.querySelectorAll("code.block")){
     const copybtn = document.createElement("button");
     const icon = document.createElement("img");
     icon.src = "copy.svg";
