@@ -50,7 +50,8 @@ update_scrollhands();
 const QUIPS = [
     "Efficiency throughout the development process",
     "100% fewer syntax errors than competitors, guaranteed!",
-    "More integrated than Visual Studio"
+    "More integrated than Visual Studio",
+    "Looks like however you want it to"
 ];
 const quip = document.getElementById("quip");
 function set_quip() {
