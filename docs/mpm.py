@@ -184,8 +184,8 @@ def symlink(src: Path,dst: Path,name:str|None=None):
             else:
                 target.unlink()
             target.symlink_to(src,src.is_dir())
-        elif target.readlink().resolve() != src:
-            print(f"Link exists, but seems to be pointing to the wrong location. Adjusting...")
+        elif (lt := target.readlink().resolve()) != src:
+            print(f"Link exists, but seems to be pointing to the wrong location {lt} != {src}. Adjusting...")
             target.unlink()
             target.symlink_to(src,src.is_dir())
     else:
